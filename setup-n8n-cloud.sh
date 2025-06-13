@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-# setup-n8n-cloud.sh
-#
 # Copyright (c) 2025 Dev Cloud Planet
 # Este script está licenciado bajo la Licencia MIT.
 # Puedes encontrar una copia de la licencia en el archivo LICENSE
