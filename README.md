@@ -1,8 +1,5 @@
 # Instalador Automatizado de n8n para Producción by Dev Cloud Planet
 
-![Dev Cloud Planet Banner](https://via.placeholder.com/1200x300.png/0A1B2C/FFFFFF?text=Dev%20Cloud%20Planet%20-%20n8n%20Deployment)
-<!-- Reemplaza la URL de arriba con un banner real si tienes uno -->
-
 Este repositorio aloja un script de Bash (`setup-n8n-cloud.sh`) diseñado por **Dev Cloud Planet** para automatizar el despliegue de una pila completa y robusta de [n8n](https://n8n.io/) en servidores Ubuntu. La configuración está optimizada para entornos de producción, utilizando Docker y un proxy inverso Nginx para garantizar seguridad, escalabilidad y facilidad de gestión.
 
 El objetivo es abstraer la complejidad de la configuración, permitiendo a cualquier usuario, con o sin experiencia en DevOps, desplegar una instancia de n8n lista para producción en minutos, usando un único comando.
