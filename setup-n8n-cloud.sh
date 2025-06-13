@@ -1,5 +1,12 @@
 #!/bin/bash
-
+#
+# setup-n8n-cloud.sh
+#
+# Copyright (c) 2025 Dev Cloud Planet
+# Este script está licenciado bajo la Licencia MIT.
+# Puedes encontrar una copia de la licencia en el archivo LICENSE
+# o en https://opensource.org/licenses/MIT
+#
 # Este script automatiza la instalación de n8n con Docker, PostgreSQL, Redis,
 # pgAdmin, Redis Commander y Nginx (proxy inverso).
 # Ofrece la opción de generar SSL automáticamente con Let's Encrypt o usar certificados propios.
@@ -103,7 +110,7 @@ else
 fi
 # *** FIN DE LA NUEVA SECCIÓN ***
 
-read -rp "🌍 Zona horaria (ej: America/Mexico_City o Europe/Madrid): " TZ
+read -rp "🌍 Zona horaria (ej: America/Caracas o Europe/Madrid): " TZ
 [[ -z "$TZ" ]] && log_error "La zona horaria no puede estar vacía."
 
 read -rsp "🔐 Contraseña para PostgreSQL (¡anótala!): " POSTGRES_PASSWORD; echo
