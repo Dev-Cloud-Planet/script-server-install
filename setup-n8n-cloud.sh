@@ -260,6 +260,11 @@ cat >> docker-compose.yml << EOL
       - backend
       - frontend 
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   n8n:
     image: n8nio/n8n:latest
@@ -298,6 +303,12 @@ cat >> docker-compose.yml << EOL
       - backend
       - frontend 
     restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy # <-- ¡ESTA ES LA PARTE MÁS IMPORTANTE!
+      redis:
+        condition: service_started
+
 EOL
 
 # Añadir workers si se han solicitado
@@ -324,6 +335,11 @@ if (( N8N_WORKERS > 0 )); then
       - TZ=\${TZ}
     networks:
       - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 EOF
   done
   log_success "Workers añadidos al docker-compose.yml."
