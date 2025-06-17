@@ -207,6 +207,8 @@ cat >> docker-compose.yml << EOL
     networks:
       - backend 
     restart: always
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER} -d \${POSTGRES_DB}"]
       interval: 5s
