@@ -210,6 +210,11 @@ cat >> docker-compose.yml << EOL
     networks:
       - backend
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
@@ -260,11 +265,6 @@ cat >> docker-compose.yml << EOL
       - backend
       - frontend 
     restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   n8n:
     image: n8nio/n8n:latest
