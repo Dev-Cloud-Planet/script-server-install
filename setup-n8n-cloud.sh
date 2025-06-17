@@ -207,8 +207,6 @@ cat >> docker-compose.yml << EOL
     networks:
       - backend 
     restart: always
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER} -d \${POSTGRES_DB}"]
       interval: 5s
@@ -258,8 +256,7 @@ cat >> docker-compose.yml << EOL
       - PGADMIN_DEFAULT_EMAIL=\${EMAIL:-admin@example.com}
       - PGADMIN_DEFAULT_PASSWORD=\${POSTGRES_PASSWORD}
       - VIRTUAL_HOST=\${DOMAIN_PGADMIN}
-    ports:
-      - "5050:80"
+      - PGADMIN_LISTEN_PORT=80
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
