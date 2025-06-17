@@ -368,17 +368,18 @@ log_success "Archivo docker-compose.yml generado correctamente."
 
 # --- 8. Levantar los servicios Docker ---
 log_info "Limpiando instalaciones previas (si existen)..."
-
+# Asegurar que partimos de un estado limpio
 docker compose down --volumes --remove-orphans 2>/dev/null || true 
 
 log_info "Levantando los servicios Docker. Esto puede tardar unos minutos..."
-# <-- MEJORA: Usar sudo solo si es necesario y simplificar la llamada
-if [[ \$(id -u) -ne 0 ]] && ! groups | grep -q '\bdocker\b'; then
-  SUDO_CMD="sudo"
-else
-  SUDO_CMD=""
+
+SUDO_CMD=""
+if [ "$(id -u)" -ne 0 ] && ! id -nG "$USER" | grep -qw "docker"; then
+    log_warn "El usuario no es root y no está en el grupo 'docker'. Usando 'sudo'..."
+    SUDO_CMD="sudo"
 fi
-\$SUDO_CMD docker compose up -d || log_error "Falló el levantamiento de los servicios Docker."
+
+$SUDO_CMD docker compose up -d || log_error "Falló el levantamiento de los servicios Docker."
 
 log_success "¡Todos los servicios Docker están en funcionamiento!"
 
