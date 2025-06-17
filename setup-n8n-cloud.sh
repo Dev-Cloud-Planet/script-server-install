@@ -26,7 +26,6 @@ sudo -v || log_error "No se pudo obtener privilegios sudo. Asegúrate de que tu 
 
 log_info "Creando directorios para la persistencia de datos de Nginx..."
 mkdir -p data/certs data/vhost.d data/html data/conf.d || log_error "No se pudieron crear los directorios de datos."
-sudo chown -R "$USER":"$USER" data || log_error "No se pudo cambiar el propietario de los directorios de datos."
 log_success "Directorios de datos creados correctamente en $(pwd)/data."
 
 # --- 3. Actualización del sistema ---
@@ -78,7 +77,6 @@ if [[ "$DOMAIN_N8N" == "$DOMAIN_PGADMIN" || "$DOMAIN_N8N" == "$DOMAIN_REDIS_COMM
   log_error "Los dominios para n8n, pgAdmin y Redis Commander deben ser únicos."
 fi
 
-# *** NUEVA SECCIÓN: ELECCIÓN DEL MÉTODO SSL ***
 log_info "Configuración de SSL"
 read -rp "🔒 ¿Cómo quieres configurar SSL? [a]utomático con Let's Encrypt (recomendado) o [m]anual con tus propios certificados: " SSL_MODE
 if [[ ! "$SSL_MODE" =~ ^[aAmM]$ ]]; then log_error "Opción no válida. Debes elegir 'a' o 'm'."; fi
@@ -106,7 +104,6 @@ else
         sudo cp "$key_path" "./data/certs/${domain}.key" || log_error "No se pudo copiar la clave privada."
     done
 fi
-# *** FIN DE LA NUEVA SECCIÓN ***
 
 read -rp "🌍 Zona horaria (ej: America/Caracas o Europe/Madrid): " TZ
 [[ -z "$TZ" ]] && log_error "La zona horaria no puede estar vacía."
@@ -144,6 +141,8 @@ EMAIL=${EMAIL}
 N8N_SECURE_COOKIE=true
 # Configuración General
 TZ=${TZ}
+POSTGRES_USER=postgres 
+POSTGRES_DB=postgres   
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 # Credenciales de n8n
 N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
@@ -154,7 +153,6 @@ EOL
 log_success "Archivo .env generado correctamente."
 
 # --- 7. Creación del archivo docker-compose.yml ---
-# Iniciar el archivo docker-compose.yml con los servicios base
 log_info "Generando el archivo docker-compose.yml..."
 cat > docker-compose.yml << EOL
 services:
@@ -171,13 +169,12 @@ services:
       - ./data/html:/usr/share/nginx/html
       - ./data/conf.d:/etc/nginx/conf.d
     networks:
-      - backend
+      - frontend 
     restart: always
 EOL
 
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-
   letsencrypt:
     image: jrcs/letsencrypt-nginx-proxy-companion
     container_name: letsencrypt
@@ -192,36 +189,41 @@ cat >> docker-compose.yml << EOL
       - ./data/vhost.d:/etc/nginx/vhost.d
       - ./data/html:/usr/share/nginx/html
     networks:
-      - backend
+      - frontend 
     restart: always
 EOL
 fi
 
-# Añadir los servicios restantes
 cat >> docker-compose.yml << EOL
-
   postgres:
     image: postgres:15
     container_name: postgres
     environment:
+      - POSTGRES_USER=\${POSTGRES_USER}
+      - POSTGRES_DB=\${POSTGRES_DB}
       - POSTGRES_PASSWORD=\${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend
+      - backend 
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U \${POSTGRES_USER} -d \${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     container_name: redis
     networks:
-      - backend
+      - backend 
     restart: always
+    healthcheck: 
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis-commander:
     image: rediscommander/redis-commander:latest
@@ -240,9 +242,12 @@ EOL
 fi
 cat >> docker-compose.yml << EOL
     networks:
-      - backend
       - frontend 
+      - backend
     restart: always
+    depends_on: 
+      redis:
+        condition: service_healthy
 
   pgadmin:
     image: dpage/pgadmin4
@@ -256,15 +261,18 @@ cat >> docker-compose.yml << EOL
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-      - LETSENCRYPT_HOST=\${DOMAIN_PGADMIN}
+      - LETSENCRYPT_HOST=\${DOMAIN_PGADMIN} 
       - LETSENCRYPT_EMAIL=\${EMAIL}
 EOL
 fi
 cat >> docker-compose.yml << EOL
     networks:
+      - frontend
       - backend
-      - frontend 
     restart: always
+    depends_on: 
+      postgres:
+        condition: service_healthy
 
   n8n:
     image: n8nio/n8n:latest
@@ -277,22 +285,24 @@ cat >> docker-compose.yml << EOL
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=postgres
-      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_DATABASE=\${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=\${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=\${POSTGRES_PASSWORD}
       - QUEUE_MODE=redis
       - QUEUE_REDIS_HOST=redis
       - TZ=\${TZ}
       - WEBHOOK_TUNNEL_URL=https://\${DOMAIN_N8N}/
       - N8N_HOST=\${DOMAIN_N8N}
-      - N8N_PORT=5678 
+      - N8N_PORT=5678
       - VIRTUAL_HOST=\${DOMAIN_N8N}
       - VIRTUAL_PORT=5678
       - N8N_TRUSTED_PROXIES=nginx-proxy
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false 
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true   
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-      - LETSENCRYPT_HOST=\${DOMAIN_N8N}
+      - LETSENCRYPT_HOST=\${DOMAIN_N8N} 
       - LETSENCRYPT_EMAIL=\${EMAIL}
 EOL
 fi
@@ -300,18 +310,17 @@ cat >> docker-compose.yml << EOL
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
+      - frontend
       - backend
-      - frontend 
     restart: always
     depends_on:
       postgres:
-        condition: service_healthy # <-- ¡ESTA ES LA PARTE MÁS IMPORTANTE!
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy 
 
 EOL
 
-# Añadir workers si se han solicitado
 if (( N8N_WORKERS > 0 )); then
   log_info "Añadiendo ${N8N_WORKERS} workers a docker-compose.yml..."
   for i in $(seq 1 "$N8N_WORKERS"); do
@@ -320,14 +329,14 @@ if (( N8N_WORKERS > 0 )); then
   n8n-worker-$i:
     image: n8nio/n8n:latest
     container_name: n8n-worker-$i
-    restart: always
     command: worker
+    restart: always
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=postgres
-      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_DATABASE=\${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=\${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=\${POSTGRES_PASSWORD}
       - QUEUE_MODE=redis
       - QUEUE_REDIS_HOST=redis
@@ -339,29 +348,38 @@ if (( N8N_WORKERS > 0 )); then
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 EOF
   done
   log_success "Workers añadidos al docker-compose.yml."
 fi
 
-# Añadir las definiciones de volúmenes y redes al final
 cat >> docker-compose.yml << EOL
 
 volumes:
-  postgres_data:
-  n8n_data:
+  postgres_data: {}
+  n8n_data: {}
 
 networks:
   frontend:
   backend:
-    driver: bridge
 EOL
 log_success "Archivo docker-compose.yml generado correctamente."
 
 # --- 8. Levantar los servicios Docker ---
+log_info "Limpiando instalaciones previas (si existen)..."
+
+docker compose down --volumes --remove-orphans 2>/dev/null || true 
+
 log_info "Levantando los servicios Docker. Esto puede tardar unos minutos..."
-sudo docker compose -f "$(pwd)/docker-compose.yml" --env-file "$(pwd)/.env" up -d || log_error "Falló el levantamiento de los servicios Docker."
+# <-- MEJORA: Usar sudo solo si es necesario y simplificar la llamada
+if [[ \$(id -u) -ne 0 ]] && ! groups | grep -q '\bdocker\b'; then
+  SUDO_CMD="sudo"
+else
+  SUDO_CMD=""
+fi
+\$SUDO_CMD docker compose up -d || log_error "Falló el levantamiento de los servicios Docker."
+
 log_success "¡Todos los servicios Docker están en funcionamiento!"
 
 # --- 9. Instrucciones Finales ---
@@ -374,7 +392,7 @@ echo -e "\e[36m  - ${DOMAIN_REDIS_COMMANDER}\e[0m"
 
 log_info "Una vez que los DNS se hayan propagado, podrás acceder a tus servicios:"
 log_info "n8n:             \e[1mhttps://${DOMAIN_N8N}\e[0m"
-log_info "pgAdmin:         \e[1mhttps://${DOMAIN_PGADMIN}\e[0m (Usuario: ${EMAIL:-tu_email_de_pgadmin@ejemplo.com}, Contraseña: la de PostgreSQL)"
+log_info "pgAdmin:         \e[1mhttps://${DOMAIN_PGADMIN}\e[0m (Usuario: ${EMAIL:-admin@example.com}, Contraseña: la de PostgreSQL)"
 log_info "Redis Commander: \e[1mhttps://${DOMAIN_REDIS_COMMANDER}\e[0m"
 
 if [[ "$SSL_MODE" == "automatic" ]]; then
@@ -387,5 +405,5 @@ log_warn "RECORDATORIO: Si tu usuario no estaba en el grupo 'docker' antes, nece
 log_success "¡Disfruta de tus servicios n8n en la nube!"
 # --- 10. Finalización ---
 log_info "Si tienes alguna duda o problema, revisa la documentación en Github o contacta con devcloudplanet@gmail.com"
-log_info "Gracias por usar este script. ¡EXITO! 👋 "
+log_info "Gracias por usar este script. ¡ÉXITO!"
 exit 0
