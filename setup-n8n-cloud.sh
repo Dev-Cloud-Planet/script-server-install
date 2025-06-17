@@ -255,9 +255,9 @@ cat >> docker-compose.yml << EOL
     environment:
       - PGADMIN_DEFAULT_EMAIL=\${EMAIL:-admin@example.com}
       - PGADMIN_DEFAULT_PASSWORD=\${POSTGRES_PASSWORD}
-      - PGADMIN_LISTEN_PORT=80
       - VIRTUAL_HOST=\${DOMAIN_PGADMIN}
-      - VIRTUAL_PORT=80
+    ports:
+      - "5050:80"
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
