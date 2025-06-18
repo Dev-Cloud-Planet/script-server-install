@@ -202,6 +202,7 @@ cat >> docker-compose.yml << EOL
   redis:
     image: redis:7-alpine
     container_name: redis
+    restart: always
     networks:
       - backend 
     restart: always
@@ -263,6 +264,8 @@ cat >> docker-compose.yml << EOL
     image: n8nio/n8n:latest
     container_name: n8n-main
     environment:
+      - REDIS_PORT: 6379
+      - REDIS_HOST: redis
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=\${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=\${N8N_BASIC_AUTH_PASSWORD}
@@ -317,6 +320,8 @@ if (( N8N_WORKERS > 0 )); then
     command: worker
     restart: always
     environment:
+      - REDIS_PORT: 6379
+      - REDIS_HOST: redis
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_PORT=5432
