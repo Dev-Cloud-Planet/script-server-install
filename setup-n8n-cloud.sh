@@ -6,6 +6,8 @@
 # o en https://opensource.org/licenses/MIT
 #
 # Este script automatiza la instalación de n8n con Docker, PostgreSQL, Redis,
+# pgAdmin, Redis Commander y un proxy inverso Nginx con Let's Encrypt integrado.
+# Ofrece la opción de generar SSL automáticamente o usar certificados propios.
 
 set -euo pipefail
 
@@ -161,7 +163,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
       - ./data/certs:/etc/nginx/certs:rw
       - ./data/vhost.d:/etc/nginx/vhost.d
       - ./data/html:/usr/share/nginx/html
