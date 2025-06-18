@@ -181,6 +181,20 @@ EOL
 fi
 
 cat >> docker-compose.yml << EOL
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    volumes:
+      - ./data/certs:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    volumes_from:
+      - nginx-proxy
+    networks:
+      - frontend
+    restart: always
+    depends_on:
+      - nginx-proxy
+  
   postgres:
     image: postgres:15
     container_name: postgres
