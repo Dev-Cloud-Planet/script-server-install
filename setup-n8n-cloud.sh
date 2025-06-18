@@ -176,7 +176,7 @@ EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
     environment:
-      - DEFAULT_EMAIL=\${EMAIL}
+      DEFAULT_EMAIL: \${EMAIL}
 EOL
 fi
 
@@ -185,9 +185,9 @@ cat >> docker-compose.yml << EOL
     image: postgres:15
     container_name: postgres
     environment:
-      - POSTGRES_USER=\${POSTGRES_USER}
-      - POSTGRES_DB=\${POSTGRES_DB}
-      - POSTGRES_PASSWORD=\${POSTGRES_PASSWORD}
+      POSTGRES_USER: \${POSTGRES_USER}
+      POSTGRES_DB: \${POSTGRES_DB}
+      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -215,15 +215,15 @@ cat >> docker-compose.yml << EOL
     image: rediscommander/redis-commander:latest
     container_name: redis-commander
     environment:
-      - REDIS_HOSTS=local:redis:6379
-      - TZ=\${TZ}
-      - VIRTUAL_HOST=\${DOMAIN_REDIS_COMMANDER}
-      - VIRTUAL_PORT=8081
+      REDIS_HOSTS: local:redis:6379
+      TZ: \${TZ}
+      VIRTUAL_HOST: \${DOMAIN_REDIS_COMMANDER}
+      VIRTUAL_PORT: 8081
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-      - LETSENCRYPT_HOST=\${DOMAIN_REDIS_COMMANDER}
-      - LETSENCRYPT_EMAIL=\${EMAIL}
+      LETSENCRYPT_HOST: \${DOMAIN_REDIS_COMMANDER}
+      LETSENCRYPT_EMAIL: \${EMAIL}
 EOL
 fi
 cat >> docker-compose.yml << EOL
@@ -239,15 +239,15 @@ cat >> docker-compose.yml << EOL
     image: dpage/pgadmin4
     container_name: pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=\${EMAIL:-admin@example.com}
-      - PGADMIN_DEFAULT_PASSWORD=\${POSTGRES_PASSWORD}
-      - VIRTUAL_HOST=\${DOMAIN_PGADMIN}
-      - PGADMIN_LISTEN_PORT=80
+      PGADMIN_DEFAULT_EMAIL: \${EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: \${POSTGRES_PASSWORD}
+      VIRTUAL_HOST: \${DOMAIN_PGADMIN}
+      PGADMIN_LISTEN_PORT: 80
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-      - LETSENCRYPT_HOST=\${DOMAIN_PGADMIN} 
-      - LETSENCRYPT_EMAIL=\${EMAIL}
+      LETSENCRYPT_HOST: \${DOMAIN_PGADMIN} 
+      LETSENCRYPT_EMAIL: \${EMAIL}
 EOL
 fi
 cat >> docker-compose.yml << EOL
@@ -263,34 +263,34 @@ cat >> docker-compose.yml << EOL
     image: n8nio/n8n:latest
     container_name: n8n-main
     environment:
-      - REDIS_PORT: 6379
-      - REDIS_HOST: redis
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=\${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=\${N8N_BASIC_AUTH_PASSWORD}
-      - N8N_ENCRYPTION_KEY=\${N8N_ENCRYPTION_KEY}
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=\${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=\${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=\${POSTGRES_PASSWORD}
-      - QUEUE_MODE=redis
-      - QUEUE_REDIS_HOST=redis
-      - TZ=\${TZ}
-      - WEBHOOK_TUNNEL_URL=https://\${DOMAIN_N8N}/
-      - N8N_HOST=\${DOMAIN_N8N}
-      - N8N_PORT=5678
-      - VIRTUAL_HOST=\${DOMAIN_N8N}
-      - VIRTUAL_PORT=5678
-      - N8N_TRUSTED_PROXIES=nginx-proxy
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false 
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true   
+      REDIS_PORT: 6379
+      REDIS_HOST: redis
+      N8N_BASIC_AUTH_ACTIVE: true
+      N8N_BASIC_AUTH_USER: \${N8N_BASIC_AUTH_USER}
+      N8N_BASIC_AUTH_PASSWORD: \${N8N_BASIC_AUTH_PASSWORD}
+      N8N_ENCRYPTION_KEY: \${N8N_ENCRYPTION_KEY}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: \${POSTGRES_DB}
+      DB_POSTGRESDB_USER: \${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: \${POSTGRES_PASSWORD}
+      QUEUE_MODE: redis
+      QUEUE_REDIS_HOST: redis
+      TZ: \${TZ}
+      WEBHOOK_TUNNEL_URL: https://\${DOMAIN_N8N}/
+      N8N_HOST: \${DOMAIN_N8N}
+      N8N_PORT: 5678
+      VIRTUAL_HOST: \${DOMAIN_N8N}
+      VIRTUAL_PORT: 5678
+      N8N_TRUSTED_PROXIES: nginx-proxy
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: false
+      OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: true
 EOL
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-      - LETSENCRYPT_HOST=\${DOMAIN_N8N} 
-      - LETSENCRYPT_EMAIL=\${EMAIL}
+      LETSENCRYPT_HOST: \${DOMAIN_N8N} 
+      LETSENCRYPT_EMAIL: \${EMAIL}
 EOL
 fi
 cat >> docker-compose.yml << EOL
@@ -319,18 +319,18 @@ if (( N8N_WORKERS > 0 )); then
     command: worker
     restart: always
     environment:
-      - REDIS_PORT: 6379
-      - REDIS_HOST: redis
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=\${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=\${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=\${POSTGRES_PASSWORD}
-      - QUEUE_MODE=redis
-      - QUEUE_REDIS_HOST=redis
-      - N8N_ENCRYPTION_KEY=\${N8N_ENCRYPTION_KEY}
-      - TZ=\${TZ}
+      REDIS_PORT: 6379
+      REDIS_HOST: redis
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: \${POSTGRES_DB}
+      DB_POSTGRESDB_USER: \${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: \${POSTGRES_PASSWORD}
+      QUEUE_MODE: redis
+      QUEUE_REDIS_HOST: redis
+      N8N_ENCRYPTION_KEY: \${N8N_ENCRYPTION_KEY}
+      TZ: \${TZ}
     networks:
       - backend
     depends_on:
