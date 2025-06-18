@@ -205,7 +205,6 @@ cat >> docker-compose.yml << EOL
     restart: always
     networks:
       - backend 
-    restart: always
     healthcheck: 
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
