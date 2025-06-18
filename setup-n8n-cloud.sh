@@ -6,8 +6,6 @@
 # o en https://opensource.org/licenses/MIT
 #
 # Este script automatiza la instalación de n8n con Docker, PostgreSQL, Redis,
-# pgAdmin, Redis Commander y Nginx (proxy inverso).
-# Ofrece la opción de generar SSL automáticamente con Let's Encrypt o usar certificados propios.
 
 set -euo pipefail
 
@@ -157,14 +155,14 @@ log_info "Generando el archivo docker-compose.yml..."
 cat > docker-compose.yml << EOL
 services:
   nginx-proxy:
-    image: jwilder/nginx-proxy
+    image: nginxproxy/nginx-proxy:alpine
     container_name: nginx-proxy
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./data/certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/certs:/etc/nginx/certs:rw
       - ./data/vhost.d:/etc/nginx/vhost.d
       - ./data/html:/usr/share/nginx/html
       - ./data/conf.d:/etc/nginx/conf.d
@@ -175,22 +173,8 @@ EOL
 
 if [[ "$SSL_MODE" == "automatic" ]]; then
 cat >> docker-compose.yml << EOL
-  letsencrypt:
-    image: jrcs/letsencrypt-nginx-proxy-companion
-    container_name: letsencrypt
-    depends_on:
-      - nginx-proxy
     environment:
-      - NGINX_PROXY_CONTAINER=nginx-proxy
       - DEFAULT_EMAIL=\${EMAIL}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./data/certs:/etc/nginx/certs:rw
-      - ./data/vhost.d:/etc/nginx/vhost.d
-      - ./data/html:/usr/share/nginx/html
-    networks:
-      - frontend 
-    restart: always
 EOL
 fi
 
